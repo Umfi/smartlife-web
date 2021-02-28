@@ -63,6 +63,8 @@ export async function getDevices() {
             var devices = [];
             var stored_devices = [];
 
+            console.log(json);
+
             if ("header" in json && "code" in json["header"] && json["header"]["code"] === "FrequentlyInvoke") {
 				if (localStorage.devices) {
                     devices = JSON.parse(localStorage.devices);	
@@ -83,4 +85,65 @@ export async function getDevices() {
         })
 
         return data;
+}
+
+async function sendCommandToDevice(deviceID, action, value_name, new_state) {
+
+    const headers = {
+        'Content-Type': 'application/json',
+    }
+
+    var formData = {
+		"header": {
+			"name": action,
+			"namespace": "control",
+			"payloadVersion": 1,
+		},
+		"payload": {
+			"accessToken": getAccessToken(),
+            "devId": deviceID,
+            [value_name]: new_state
+		},
+	}
+
+    var api_url = buildApiUrl("skill")
+    const data = await axios({ url: config.CORS_PROXY_URL+api_url, data: JSON.stringify(formData), method: 'POST', headers: headers })
+        .then(resp => {
+            var json = resp.data;
+            return json;
+        })
+        .catch(err => {
+            console.error(err);
+            return false;
+        })
+
+        return data;
+}
+
+
+export async function toggleDevice(deviceID, state, devType) {
+    var new_state = 1;
+	
+    if (state === false || devType === "scene") {
+		new_state = 0;
+	}
+
+    const result = await sendCommandToDevice(deviceID, "turnOnOff", "value", new_state)
+    if (result) {
+        if ("header" in result && "code" in result["header"] && result["header"]["code"] === "SUCCESS" && devType !== "scene"){
+            if (localStorage.devices) {
+                var devices = JSON.parse(localStorage.devices);	
+                for (var i = 0; i < devices.length; i++) {
+                    if(deviceID === devices[i].id){  
+                        devices[i].data.state = state
+                        break;
+                    }
+                 }
+                 localStorage.setItem("devices", JSON.stringify(devices));
+            }
+            return true;
+        }
+    }
+
+    return false;
 }

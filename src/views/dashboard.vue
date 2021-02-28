@@ -9,6 +9,7 @@
                 v-bind:id="device.id"
                 v-bind:name="device.name"
                 v-bind:type="device.ha_type"
+                v-bind:devtype="device.dev_type"
                 v-bind:data="device.data">
             </device>
         </div>
