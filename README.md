@@ -9,7 +9,7 @@ npm install
 
 ### Start Proxy Server to prevent CORS
 ```
-npm run corse
+npm run cors
 ```
 
 ### Compiles and hot-reloads for development
