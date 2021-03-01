@@ -191,7 +191,37 @@ export async function adjustColorTemperature(deviceID, colorTemperature) {
                 var devices = JSON.parse(localStorage.devices);	
                 for (var i = 0; i < devices.length; i++) {
                     if(deviceID === devices[i].id){  
+                        devices[i].data.color_mode = "white" 
                         devices[i].data.color_temp = colorTemperature
+                        break;
+                    }
+                 }
+                 localStorage.setItem("devices", JSON.stringify(devices));
+            }
+            return true;
+        }
+    }
+
+    return false;
+}
+
+export async function adjustColor(deviceID, hsv) {
+    
+    var color = {
+        "hue": hsv.h, 
+        "saturation": hsv.s * 255, 
+        "brightness": hsv.v * 255
+    };
+
+    const result = await sendCommandToDevice(deviceID, "colorSet", "color", color)
+    if (result) {
+        if ("header" in result && "code" in result["header"] && result["header"]["code"] === "SUCCESS"){
+            if (localStorage.devices) {
+                var devices = JSON.parse(localStorage.devices);	
+                for (var i = 0; i < devices.length; i++) {
+                    if(deviceID === devices[i].id){ 
+                        devices[i].data.color_mode = "colour" 
+                        devices[i].data.color = color
                         break;
                     }
                  }

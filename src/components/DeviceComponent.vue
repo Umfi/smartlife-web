@@ -28,36 +28,76 @@
         <div class="modal-content">
           <h4>Adjust Light</h4>
            <br>
-           <div class="row">
-             <h5>Brightness</h5>
-           </div>
-           <div class="row valign-wrapper">
-              <div class="col s1">
-                <i class="material-icons">brightness_low</i>
-              </div>
-              <div class="range-field col s10">
-                  <input type="range" min="0" max="255" v-model="brightness" @change="adjustBrightness" />
-              </div>
-              <div class="col s1">
-                <i class="material-icons">brightness_high</i>
-              </div>
-            </div>
 
+           <div class="row">
+             <h5>Mode</h5>
+           </div>
+           <div class="row">
+              <div class="col s12">
+                  <label>
+                    <input v-model="mode" @change="changeLightMode" type="radio" value="white"  />
+                    <span>White</span>
+                  </label>
+                  <label class="ml5">
+                    <input v-model="mode" @change="changeLightMode" type="radio" value="colour" />
+                    <span>Color</span>
+                  </label>
+              </div>
+           </div>
+           <div v-if="mode === 'white'">
             <div class="row">
-             <h5>Color Temperature</h5>
+              <h5>Brightness</h5>
             </div>
             <div class="row valign-wrapper">
                 <div class="col s1">
-                  <i class="material-icons">cloud_queue</i>
+                  <i class="material-icons">brightness_low</i>
                 </div>
                 <div class="range-field col s10">
-                    <input type="range" min="1000" max="10000" v-model="colorTemperature" @change="adjustColorTemperature" />
+                    <input type="range" min="25" max="255" v-model="brightness" @change="adjustBrightness" />
                 </div>
                 <div class="col s1">
-                  <i class="material-icons">wb_sunny</i>
+                  <i class="material-icons">brightness_high</i>
                 </div>
+            </div>
+            <div class="row">
+              <h5>Color Temperature</h5>
+            </div>
+            <div class="row valign-wrapper">
+              <div class="col s1">
+                <i class="material-icons">cloud_queue</i>
               </div>
-
+              <div class="range-field col s10">
+                  <input type="range" min="1000" max="10000" v-model="colorTemperature" @change="adjustColorTemperature" />
+              </div>
+              <div class="col s1">
+                <i class="material-icons">wb_sunny</i>
+              </div>
+            </div>
+          </div>
+          <div v-if="mode === 'colour'">
+            <div class="row">
+              <h5>Color</h5>
+            </div>
+            <div class="row">
+                <div class="range-field">
+                  <slider-picker v-model="color" @input="adjustColor" class="col s12"/>
+                </div>
+             </div>
+             <div class="row">
+              <h5>Brightness</h5>
+            </div>
+            <div class="row valign-wrapper">
+                <div class="col s1">
+                  <i class="material-icons">brightness_low</i>
+                </div>
+                <div class="range-field col s10">
+                    <input type="range" min="25" max="255" v-model="brightness" @change="adjustBrightness" />
+                </div>
+                <div class="col s1">
+                  <i class="material-icons">brightness_high</i>
+                </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -65,8 +105,9 @@
 
 <script>
 
-import { toggleDevice, adjustBrightness, adjustColorTemperature } from "../service/DeviceService.js";
+import { toggleDevice, adjustBrightness, adjustColorTemperature, adjustColor } from "../service/DeviceService.js";
 import M from 'materialize-css'
+import SliderPicker from 'vue-color/src/components/Slider'
 
 export default {
     name: 'Device',
@@ -77,11 +118,17 @@ export default {
         devtype: String,
         data: Object,
     },
+    components: {
+      'slider-picker': SliderPicker
+    },
     data() {
         return {
+            timeout: null,
             state: false,
-            brightness: 0,
-            colorTemperature: 1000
+            mode: 'white',
+            brightness: 25,
+            colorTemperature: 1000,
+            color: { h: 150, s: 0.66, v: 0.30 }
         }
     },
     mounted() {
@@ -94,6 +141,11 @@ export default {
 
       this.state = curState;
 
+      // Init mode
+      if (this.$props.data.color_mode) {
+        this.mode = this.$props.data.color_mode;
+      }
+
       // Init brightness
       if (this.$props.data.brightness) {
         this.brightness = parseInt(this.$props.data.brightness);
@@ -102,6 +154,11 @@ export default {
       // Init brightness
       if (this.$props.data.color_temp) {
         this.colorTemperature = parseInt(this.$props.data.color_temp);
+      }
+
+      // Init color
+      if (this.$props.data.color) {
+        this.color = this.$props.data.color;
       }
 
       // Init Materialize Components
@@ -123,6 +180,19 @@ export default {
         var instance = M.Modal.getInstance(elem);
         instance.open();
       },
+      async changeLightMode() {
+        if (this.mode == "white") {
+          this.colorTemperature = 10000;
+          this.brightness = 255;
+          await this.adjustColorTemperature();
+          await this.adjustBrightness();
+        } else {
+          this.color.hsv = { h: 150, s: 0.66, v: 0.30 }
+          this.brightness = 255;
+          await this.adjustColor();
+          await this.adjustBrightness();
+        }
+      },
       async adjustBrightness() {
         const result = await adjustBrightness(this.$props.id, this.brightness);
         if (!result) {
@@ -134,11 +204,24 @@ export default {
         if (!result) {
           M.toast({html: 'Could not adjust the color temperature of the device!'});
         }
+      },
+      async adjustColor() {
+        clearTimeout(this.timeout);
+        this.timeout = setTimeout( async () => {
+
+            const result = await adjustColor(this.$props.id, this.color.hsv);
+            if (!result) {
+              M.toast({html: 'Could not adjust the color of the device!'});
+            }
+
+        }, 250);
       }
     }
 }
 </script>
 
 <style scoped>
-
+.ml5 {
+  margin-left: 5%;
+}
 </style>
