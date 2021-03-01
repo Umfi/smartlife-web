@@ -147,3 +147,59 @@ export async function toggleDevice(deviceID, state, devType) {
 
     return false;
 }
+
+export async function adjustBrightness(deviceID, brightness) {
+    
+    if (brightness < 0) {
+		brightness = 0;
+	} else if (brightness > 255) {
+		brightness = 255;
+	} 
+
+    const result = await sendCommandToDevice(deviceID, "brightnessSet", "value", brightness)
+    if (result) {
+        if ("header" in result && "code" in result["header"] && result["header"]["code"] === "SUCCESS"){
+            if (localStorage.devices) {
+                var devices = JSON.parse(localStorage.devices);	
+                for (var i = 0; i < devices.length; i++) {
+                    if(deviceID === devices[i].id){  
+                        devices[i].data.brightness = brightness
+                        break;
+                    }
+                 }
+                 localStorage.setItem("devices", JSON.stringify(devices));
+            }
+            return true;
+        }
+    }
+
+    return false;
+}
+
+export async function adjustColorTemperature(deviceID, colorTemperature) {
+    
+    if (colorTemperature < 1000) {
+		colorTemperature = 1000;
+	} else if (colorTemperature > 10000) {
+		colorTemperature = 10000;
+	} 
+
+    const result = await sendCommandToDevice(deviceID, "colorTemperatureSet", "value", colorTemperature)
+    if (result) {
+        if ("header" in result && "code" in result["header"] && result["header"]["code"] === "SUCCESS"){
+            if (localStorage.devices) {
+                var devices = JSON.parse(localStorage.devices);	
+                for (var i = 0; i < devices.length; i++) {
+                    if(deviceID === devices[i].id){  
+                        devices[i].data.color_temp = colorTemperature
+                        break;
+                    }
+                 }
+                 localStorage.setItem("devices", JSON.stringify(devices));
+            }
+            return true;
+        }
+    }
+
+    return false;
+}
