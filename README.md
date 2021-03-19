@@ -26,3 +26,12 @@ npm run build
 ```
 npm run lint
 ```
+
+# Screenshots
+
+<p align="center">
+    <img src="https://github.com/Umfi/smartlife-web/blob/main/screenshots/login.png?raw=true" height="400" />
+    <img src="https://github.com/Umfi/smartlife-web/blob/main/screenshots/overview.png?raw=true" height="400" />
+    <img src="https://github.com/Umfi/smartlife-web/blob/main/screenshots/settings.png?raw=true"  height="400" />
+</p>
+
